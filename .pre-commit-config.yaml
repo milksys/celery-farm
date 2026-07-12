@@ -1,0 +1,27 @@
+# See https://pre-commit.com for usage. Install the git hook with:
+#   uv run pre-commit install
+# Run against all files once:
+#   uv run pre-commit run --all-files
+#
+# Ruff replaces black + isort + flake8 + autoflake. Rules/format live in
+# pyproject.toml ([tool.ruff]); this file just wires the hooks.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.21
+    hooks:
+      # Linter: pyflakes(F, incl. autoflake's F401/F841) + pycodestyle(E,W)
+      # + isort(I) + pyupgrade(UP) + bugbear(B). `--fix` auto-repairs.
+      - id: ruff
+        args: [--fix]
+      # Formatter: black-compatible.
+      - id: ruff-format

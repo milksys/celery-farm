@@ -1,0 +1,118 @@
+<svg width="1000" height="560" viewBox="0 0 1000 560" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="'DejaVu Sans','Segoe UI',Helvetica,Arial,sans-serif">
+  <defs>
+    <filter id="sh" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#0b1f14" flood-opacity="0.28"/>
+    </filter>
+    <style>
+      .mono { font-family: 'DejaVu Sans Mono','SFMono-Regular',Menlo,Consolas,monospace; }
+      .path { font-size: 15px; fill: #3b4151; font-weight: 700; }
+      .desc { font-size: 13.5px; fill: #6b7280; }
+      .method { font-size: 12.5px; fill: #ffffff; font-weight: 700; letter-spacing: .3px; }
+      .title { font-size: 19px; fill: #1f2933; font-weight: 700; }
+      .tag { font-size: 12px; fill: #48a06a; font-weight: 700; letter-spacing: .4px; }
+    </style>
+  </defs>
+
+  <rect width="1000" height="560" rx="0" fill="none"/>
+
+  <!-- ============ LEFT: Task Swagger ============ -->
+  <g filter="url(#sh)">
+    <rect x="24" y="24" width="464" height="512" rx="14" fill="#ffffff" stroke="#e5e7eb"/>
+  </g>
+  <!-- window chrome -->
+  <path d="M24 38a14 14 0 0 1 14-14h436a14 14 0 0 1 14 14v20H24z" fill="#f3f4f6"/>
+  <circle cx="46" cy="41" r="5" fill="#ff5f56"/>
+  <circle cx="64" cy="41" r="5" fill="#ffbd2e"/>
+  <circle cx="82" cy="41" r="5" fill="#27c93f"/>
+  <rect x="108" y="33" width="356" height="16" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="120" y="45" class="mono" font-size="11" fill="#9ca3af">localhost:8000/celery/docs</text>
+
+  <!-- header -->
+  <text x="48" y="92" class="title">celery_farm</text>
+  <rect x="48" y="104" width="96" height="20" rx="6" fill="#eef7f1"/>
+  <text x="58" y="118" class="tag">celery-farm</text>
+
+  <!-- operation rows -->
+  <g transform="translate(48 140)">
+    <!-- POST add -->
+    <rect x="0" y="0" width="416" height="52" rx="9" fill="#e8f6f0" stroke="#49cc90"/>
+    <rect x="10" y="12" width="58" height="28" rx="6" fill="#49cc90"/>
+    <text x="20" y="30" class="method">POST</text>
+    <text x="80" y="24" class="path mono">/tasks/demo.add</text>
+    <text x="80" y="42" class="desc">Add two numbers.</text>
+
+    <!-- POST ship_order -->
+    <rect x="0" y="62" width="416" height="52" rx="9" fill="#e8f6f0" stroke="#49cc90"/>
+    <rect x="10" y="74" width="58" height="28" rx="6" fill="#49cc90"/>
+    <text x="20" y="92" class="method">POST</text>
+    <text x="80" y="86" class="path mono">/tasks/demo.ship_order</text>
+    <text x="80" y="104" class="desc">Ship an order to an address.</text>
+
+    <!-- GET tasks -->
+    <rect x="0" y="124" width="416" height="52" rx="9" fill="#e7f0fb" stroke="#61affe"/>
+    <rect x="10" y="136" width="58" height="28" rx="6" fill="#61affe"/>
+    <text x="24" y="154" class="method">GET</text>
+    <text x="80" y="148" class="path mono">/tasks</text>
+    <text x="80" y="166" class="desc">List registered tasks &amp; parameters.</text>
+
+    <!-- GET results -->
+    <rect x="0" y="186" width="416" height="52" rx="9" fill="#e7f0fb" stroke="#61affe"/>
+    <rect x="10" y="198" width="58" height="28" rx="6" fill="#61affe"/>
+    <text x="24" y="216" class="method">GET</text>
+    <text x="80" y="210" class="path mono">/results/{task_id}</text>
+    <text x="80" y="228" class="desc">Poll task status / result.</text>
+
+    <!-- deprecated row -->
+    <rect x="0" y="248" width="416" height="52" rx="9" fill="#e8f6f0" stroke="#49cc90"/>
+    <rect x="10" y="260" width="58" height="28" rx="6" fill="#49cc90"/>
+    <text x="20" y="278" class="method">POST</text>
+    <text x="80" y="272" class="path mono" text-decoration="line-through" fill="#9aa1ab">/tasks/demo.divide</text>
+    <text x="80" y="290" class="desc">Divide x by y. (deprecated)</text>
+  </g>
+
+  <!-- ============ RIGHT: Beat Swagger ============ -->
+  <g filter="url(#sh)">
+    <rect x="512" y="24" width="464" height="512" rx="14" fill="#ffffff" stroke="#e5e7eb"/>
+  </g>
+  <path d="M512 38a14 14 0 0 1 14-14h436a14 14 0 0 1 14 14v20H512z" fill="#f3f4f6"/>
+  <circle cx="534" cy="41" r="5" fill="#ff5f56"/>
+  <circle cx="552" cy="41" r="5" fill="#ffbd2e"/>
+  <circle cx="570" cy="41" r="5" fill="#27c93f"/>
+  <rect x="596" y="33" width="356" height="16" rx="8" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="608" y="45" class="mono" font-size="11" fill="#9ca3af">localhost:8000/beat/docs</text>
+
+  <text x="536" y="92" class="title">celery_farm — beat</text>
+  <rect x="536" y="104" width="132" height="20" rx="6" fill="#eef7f1"/>
+  <text x="546" y="118" class="tag">celery-farm-beat</text>
+
+  <g transform="translate(536 140)">
+    <!-- GET schedule -->
+    <rect x="0" y="0" width="416" height="52" rx="9" fill="#e7f0fb" stroke="#61affe"/>
+    <rect x="10" y="12" width="58" height="28" rx="6" fill="#61affe"/>
+    <text x="24" y="30" class="method">GET</text>
+    <text x="80" y="24" class="path mono">/schedule</text>
+    <text x="80" y="42" class="desc">All scheduled entries.</text>
+
+    <!-- POST schedule/ping (run now) -->
+    <rect x="0" y="62" width="416" height="52" rx="9" fill="#e8f6f0" stroke="#49cc90"/>
+    <rect x="10" y="74" width="58" height="28" rx="6" fill="#49cc90"/>
+    <text x="20" y="92" class="method">POST</text>
+    <text x="80" y="86" class="path mono" font-size="13">/schedule/ping-every-30s</text>
+    <text x="80" y="104" class="desc">Run now — health-check task.</text>
+
+    <!-- POST schedule/report (run now) -->
+    <rect x="0" y="124" width="416" height="52" rx="9" fill="#e8f6f0" stroke="#49cc90"/>
+    <rect x="10" y="136" width="58" height="28" rx="6" fill="#49cc90"/>
+    <text x="20" y="154" class="method">POST</text>
+    <text x="80" y="148" class="path mono" font-size="12.5">/schedule/report-every-morning</text>
+    <text x="80" y="166" class="desc">Run now — build a daily report.</text>
+
+    <!-- info card -->
+    <rect x="0" y="200" width="416" height="152" rx="10" fill="#f8fafc" stroke="#e5e7eb"/>
+    <text x="18" y="228" class="mono" font-size="13" fill="#3b4151" font-weight="700">report-every-morning</text>
+    <text x="18" y="256" class="mono" font-size="12.5" fill="#6b7280"><tspan font-weight="700" fill="#48a06a">Task:</tspan>     demo.daily_report</text>
+    <text x="18" y="280" class="mono" font-size="12.5" fill="#6b7280"><tspan font-weight="700" fill="#48a06a">Schedule:</tspan> every 86400s</text>
+    <text x="18" y="304" class="mono" font-size="12.5" fill="#6b7280"><tspan font-weight="700" fill="#48a06a">Kwargs:</tspan>   {"recipients":</text>
+    <text x="18" y="322" class="mono" font-size="12.5" fill="#6b7280">          ["ops@example.com"]}</text>
+  </g>
+</svg>

@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  # Lint/format via the same pre-commit hooks used locally (ruff + ruff-format
+  # + hygiene hooks). Runs once; no Python matrix needed.
+  lint:
+    runs-on: ubuntu-latest
+    name: lint (pre-commit)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          # Match the project's minimum supported / ruff target-version (py311).
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Run pre-commit
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+        pydantic: ["v1", "v2"]
+    name: py${{ matrix.python }} · pydantic-${{ matrix.pydantic }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+
+      # pydantic v2: the project's default dependency set (all integrations).
+      - name: Test (pydantic v2)
+        if: matrix.pydantic == 'v2'
+        run: uv run --python ${{ matrix.python }} --all-extras pytest -q
+
+      # pydantic v1: pin FastAPI to a v1-supporting release; older httpx for
+      # starlette's TestClient. Django/Flask have no such constraint.
+      - name: Test (pydantic v1)
+        if: matrix.pydantic == 'v1'
+        run: >-
+          uv run --python ${{ matrix.python }} --all-extras
+          --with 'pydantic<2' --with 'fastapi==0.111.0' --with 'httpx<0.28'
+          pytest -q
+
+  # Guard the declared floor: the lowest supported Celery (>=5.3) on the lowest
+  # supported Python. The rest of the matrix uses the latest Celery.
+  floor:
+    runs-on: ubuntu-latest
+    name: floor (py3.11 · celery 5.3)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Test (minimum Celery)
+        run: uv run --python 3.11 --all-extras --with 'celery==5.3.6' pytest -q

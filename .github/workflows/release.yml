@@ -1,0 +1,55 @@
+name: Release
+
+# Publishing is driven by GitHub Releases. To cut a release:
+#   1. Draft a release in the GitHub UI (or `gh release create vX.Y.Z --generate-notes`).
+#   2. Its tag `vX.Y.Z` becomes the package version (hatch-vcs, see pyproject.toml).
+#   3. Publishing this release triggers the job below, which builds and uploads to PyPI.
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # The PyPI Trusted Publisher is registered against this environment; add
+    # required reviewers here in repo settings to gate every publish.
+    environment:
+      name: pypi
+      url: https://pypi.org/project/celery-farm/
+    permissions:
+      id-token: write  # OIDC token for Trusted Publishing (no API token needed)
+      contents: write  # attach the built artifacts to the GitHub Release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # hatch-vcs needs the tag (and history) to resolve the version.
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      # Sanity check: the built version must match the release tag (drop the
+      # leading 'v'). Guards against a detached/wrong checkout.
+      - name: Verify built version matches tag
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          built=$(ls dist/*.whl | sed -E 's/.*celery_farm-([^-]+)-.*/\1/')
+          echo "tag=$tag built=$built"
+          test "$tag" = "$built" || { echo "::error::version mismatch: tag=$tag built=$built"; exit 1; }
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # No `password:` — authentication is via OIDC Trusted Publishing.
+
+      # Attach the same sdist/wheel to the GitHub Release so they're downloadable
+      # from the release page (and pinned to the tag) alongside the PyPI upload.
+      - name: Attach artifacts to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${GITHUB_REF_NAME}" dist/* --clobber

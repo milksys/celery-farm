@@ -1,0 +1,87 @@
+[project]
+name = "celery-farm"
+# Version is derived from the git tag at build time (hatch-vcs); the single
+# source of truth is the tag `vX.Y.Z`. See [tool.hatch.version] below.
+dynamic = ["version"]
+description = "Generate OpenAPI/Swagger and REST endpoints for registered Celery tasks"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "milksys", email = "cybers11@gmail.com" }]
+dependencies = [
+    # 5.3 is the first Celery with official Python 3.11+ support, and it fixed
+    # the importlib.metadata entry-points breakage that makes 5.2's result-backend
+    # loading raise AttributeError on modern Python. 4.x can't even import (its
+    # `vine` uses inspect.formatargspec, removed in 3.11). The core works from
+    # 5.3; only Celery's own `@task(pydantic=True)` model reconstruction needs
+    # 5.6+ (older Celery delivers a model-typed arg as a plain dict).
+    "celery>=5.3",
+    "pydantic>=1.9",
+    # is_typeddict that recognizes typing_extensions.TypedDict too (needed for
+    # pydantic v2 TypedDict args on Python < 3.12). Always present via pydantic,
+    # but the core imports it directly.
+    "typing-extensions>=4.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/milksys/celery-farm"
+Repository = "https://github.com/milksys/celery-farm"
+Issues = "https://github.com/milksys/celery-farm/issues"
+
+[project.optional-dependencies]
+fastapi = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23",
+]
+django = [
+    "django>=4.2",
+]
+flask = [
+    "flask>=2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "httpx>=0.27",
+    "django>=4.2",
+    "flask>=2.0",
+    "ruff>=0.15.21",
+    "pre-commit>=4.6.0",
+]
+
+[tool.ruff]
+# Match black's default; keep in sync with the lowest supported interpreter.
+line-length = 88
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes (incl. autoflake's unused import/var: F401/F841),
+# I isort, UP pyupgrade, B flake8-bugbear.
+select = ["E", "W", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["celery_farm"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+# Derive the package version from the git tag (e.g. tag `v0.2.0` -> `0.2.0`).
+# Between tags, builds get a dev version like `0.2.1.dev3+g<sha>`.
+[tool.hatch.version]
+source = "vcs"
+
+# Write the resolved version into the package so `celery_farm.__version__`
+# works at runtime (no git needed once installed).
+[tool.hatch.build.hooks.vcs]
+version-file = "src/celery_farm/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/celery_farm"]

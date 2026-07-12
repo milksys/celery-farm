@@ -1,0 +1,39 @@
+<svg width="150" height="150" viewBox="30 14 116 116" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="celery_farm">
+  <defs>
+    <g id="mc">
+      <g stroke="#22A559" stroke-width="3" stroke-linecap="round" fill="none">
+        <path d="M0 0 C -2 -8 -4 -13 -5 -18"/>
+        <path d="M0 0 C 0 -8 0 -15 0 -21"/>
+        <path d="M0 0 C 2 -8 4 -13 5 -18"/>
+      </g>
+      <g fill="#4ADE80">
+        <circle cx="0" cy="-23" r="4.2"/>
+        <circle cx="-5.5" cy="-19" r="3.6"/>
+        <circle cx="5.5" cy="-19" r="3.6"/>
+        <circle cx="-2.5" cy="-26" r="3.2"/>
+        <circle cx="3" cy="-25" r="3.2"/>
+      </g>
+      <g fill="#15803D">
+        <circle cx="-3" cy="-20" r="2"/>
+        <circle cx="4" cy="-21" r="2"/>
+        <circle cx="0.5" cy="-24" r="1.8"/>
+      </g>
+    </g>
+  </defs>
+
+  <g transform="translate(24 24)">
+    <path d="M44 4c-15 0-15 12-15 23 0 8-6 11-13 11 7 0 13 3 13 11 0 11 0 23 15 23"
+          stroke="#16A34A" stroke-width="7.5" stroke-linecap="round" fill="none"/>
+    <path d="M84 4c15 0 15 12 15 23 0 8 6 11 13 11-7 0-13 3-13 11 0 11 0 23-15 23"
+          stroke="#16A34A" stroke-width="7.5" stroke-linecap="round" fill="none"/>
+
+    <path d="M40 78 Q64 72 88 78" stroke="#16A34A" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <g stroke="#7FCF9C" stroke-width="2.4" stroke-linecap="round">
+      <path d="M64 78 L50 92"/><path d="M64 78 L64 94"/><path d="M64 78 L78 92"/>
+    </g>
+
+    <use href="#mc" transform="translate(53 76) scale(0.85)"/>
+    <use href="#mc" transform="translate(75 76) scale(0.85)"/>
+    <use href="#mc" transform="translate(64 74) scale(1.06)"/>
+  </g>
+</svg>
