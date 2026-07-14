@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 from . import _compat
 from .beat import beat_entry_deprecated, beat_entry_doc, iter_beat_schedule
-from .introspect import iter_tasks
+from .introspect import finalize_app, iter_tasks
 from .models import build_request_model, unwrap_param
 from .schemas import (
     BeatEntryInfo,
@@ -106,15 +106,24 @@ def build_openapi(
     tasks: bool = True,
     beat: bool = True,
     beat_meta: dict[str, dict[str, Any]] | None = None,
+    finalize: bool = True,
 ) -> dict[str, Any]:
     """Build an OpenAPI document describing a Celery app's tasks and/or beat.
 
     ``tasks``/``beat`` select which sections to include, so callers can render a
     tasks-only and a beat-only document into separate Swagger UIs.
 
+    The document reflects a one-time snapshot of ``celery_app.tasks``. By default
+    (``finalize=True``) the app's task modules are imported first (``imports``/
+    ``include`` config plus autodiscovery), so tasks not yet imported in the
+    current process are still described. Pass ``finalize=False`` to skip this and
+    describe only what is registered now.
+
     Emits OpenAPI 3.1 under pydantic v2 and 3.0 under pydantic v1, matching the
     JSON Schema dialect each version produces.
     """
+    if finalize:
+        finalize_app(celery_app)
     default_tags = tags or ["celery-farm"]
     components: dict[str, Any] = {}
     paths: dict[str, Any] = {}

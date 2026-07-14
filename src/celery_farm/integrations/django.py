@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, Any
 
 from .. import _compat
 from ..beat import iter_beat_schedule
-from ..introspect import iter_tasks
+from ..introspect import finalize_app, iter_tasks
 from ..invoke import dispatch, dispatch_by_name, get_result
 from ..openapi import SWAGGER_CDN, build_openapi, swagger_ui_html
 from ..schemas import build_task_info, make_validator
@@ -41,10 +41,17 @@ def get_urlpatterns(
     version: str = "0.1.0",
     docs: bool = True,
     beat_meta: dict[str, dict[str, Any]] | None = None,
+    finalize: bool = True,
     swagger_cdn: str = SWAGGER_CDN,
     swagger_ui_options: dict[str, Any] | None = None,
 ) -> list:
     """Build Django URL patterns exposing the Celery app's tasks over REST.
+
+    The task routes are built from a one-time snapshot of ``celery_app.tasks``.
+    By default (``finalize=True``) the app's task modules are imported first
+    (``imports``/``include`` config plus autodiscovery), matching what a worker
+    does at startup, so tasks not yet imported are still exposed. Pass
+    ``finalize=False`` to skip (e.g. you import the task modules yourself).
 
     ``swagger_cdn`` overrides where the Swagger UI assets load from, and
     ``swagger_ui_options`` is merged into the ``SwaggerUIBundle({...})`` call
@@ -54,6 +61,8 @@ def get_urlpatterns(
     from django.urls import path
     from django.views.decorators.csrf import csrf_exempt
 
+    if finalize:
+        finalize_app(celery_app)
     specs = iter_tasks(celery_app, include=include, exclude=exclude)
     # Precompute per-task (task, validator) so dispatch stays O(1).
     registry = {spec.name: (spec.task, make_validator(spec)) for spec in specs}
@@ -118,6 +127,7 @@ def get_urlpatterns(
             tags=tags,
             servers=[{"url": base}],
             beat=False,  # beat lives in its own Swagger (below)
+            finalize=False,  # already discovered at build time (get_urlpatterns)
         )
         return JsonResponse(document)
 
@@ -133,6 +143,7 @@ def get_urlpatterns(
             servers=[{"url": base}],
             tasks=False,
             beat_meta=beat_meta,
+            finalize=False,  # already discovered at build time (get_urlpatterns)
         )
         return JsonResponse(document)
 

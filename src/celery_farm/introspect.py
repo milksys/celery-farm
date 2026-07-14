@@ -49,6 +49,24 @@ class TaskSpec:
     openapi_extra: dict[str, Any] | None = None
 
 
+def finalize_app(celery_app: Celery) -> None:
+    """Import the app's task modules so every task is registered before we read
+    ``celery_app.tasks``.
+
+    Task routes are baked from a one-time snapshot of ``celery_app.tasks``, but a
+    web process (unlike a worker) never imports the task modules listed in the
+    ``imports``/``include`` config or picked up by ``autodiscover_tasks`` — so
+    those tasks are missing at build time. This runs the same discovery a worker
+    does at startup (:meth:`~celery.loaders.base.BaseLoader.import_default_modules`,
+    which imports ``imports``/``include`` and fires the ``import_modules`` signal
+    used by autodiscovery), then finalizes the task registry.
+
+    Safe to call repeatedly — module imports are cached in ``sys.modules``.
+    """
+    celery_app.loader.import_default_modules()
+    celery_app.finalize()
+
+
 def _is_builtin(name: str) -> bool:
     return name.startswith("celery.")
 

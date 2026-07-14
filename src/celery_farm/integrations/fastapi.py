@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, TypedDict, Unpack
 
 from .. import _compat
 from ..beat import beat_entry_deprecated, beat_entry_doc, iter_beat_schedule
-from ..introspect import iter_tasks
+from ..introspect import finalize_app, iter_tasks
 from ..invoke import dispatch, dispatch_by_name, get_result
 from ..models import build_request_model, unwrap_param
 from ..schemas import (
@@ -159,6 +159,7 @@ def create_task_app(
     include: list[str] | None = None,
     exclude: list[str] | None = None,
     tags: list[str] | None = None,
+    finalize: bool = True,
     dependencies: list[Any] | None = None,
     **fastapi_kwargs: Unpack[FastAPIOptions],
 ) -> FastAPI:
@@ -173,6 +174,14 @@ def create_task_app(
         # tasks: /celery/docs, /celery/tasks/{name}, ...
         # beat:  /beat/docs, /beat/schedule, ...
 
+    Routes are built from a one-time snapshot of ``celery_app.tasks``, so only
+    tasks registered by then are exposed. In a web process (unlike a worker) the
+    task modules are usually not imported yet, so by default (``finalize=True``)
+    they are imported first — the ``imports``/``include`` config plus
+    autodiscovery, matching what a worker does at startup. Pass ``finalize=False``
+    to skip this (e.g. you import the task modules yourself, or want to avoid the
+    import side effects).
+
     Any extra keyword is forwarded to the underlying ``FastAPI(...)``, so you can
     disable the docs/schema or customize Swagger UI (FastAPI renders it natively;
     use its own ``swagger_ui_parameters=``), e.g.::
@@ -182,6 +191,8 @@ def create_task_app(
     """
     from fastapi import FastAPI
 
+    if finalize:
+        finalize_app(celery_app)
     task_app = FastAPI(title=title, dependencies=dependencies, **fastapi_kwargs)
     task_app.include_router(
         _build_task_router(celery_app, include=include, exclude=exclude, tags=tags)
@@ -266,6 +277,7 @@ def create_beat_app(
     title: str = "celery_farm — beat",
     tags: list[str] | None = None,
     beat_meta: dict[str, dict[str, Any]] | None = None,
+    finalize: bool = True,
     dependencies: list[Any] | None = None,
     **fastapi_kwargs: Unpack[FastAPIOptions],
 ) -> FastAPI:
@@ -285,11 +297,17 @@ def create_beat_app(
             "ping-every-30s": {"summary": "Liveness", "tags": ["health"]},
         })
 
+    By default (``finalize=True``) the app's task modules are imported first, so
+    each entry's summary/description/deprecated can be inherited from its
+    referenced task (see :func:`create_task_app`). Pass ``finalize=False`` to skip.
+
     Any extra keyword is forwarded to the underlying ``FastAPI(...)`` — e.g.
     ``docs_url=None, openapi_url=None`` to disable the docs/schema.
     """
     from fastapi import FastAPI
 
+    if finalize:
+        finalize_app(celery_app)
     beat_app = FastAPI(title=title, dependencies=dependencies, **fastapi_kwargs)
     beat_app.include_router(
         _build_beat_router(celery_app, tags=tags, beat_meta=beat_meta)

@@ -5,7 +5,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from .beat import BeatEntry, iter_beat_schedule
-from .introspect import TaskParam, TaskSpec, build_task_spec, iter_tasks
+from .introspect import (
+    TaskParam,
+    TaskSpec,
+    build_task_spec,
+    finalize_app,
+    iter_tasks,
+)
 from .invoke import dispatch, get_result
 from .models import build_request_model
 from .openapi import build_openapi
@@ -32,6 +38,7 @@ __all__ = [
     "create_blueprint",
     "create_task_app",
     "dispatch",
+    "finalize_app",
     "get_result",
     "get_urlpatterns",
     "iter_beat_schedule",

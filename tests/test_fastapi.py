@@ -124,6 +124,43 @@ def test_mountable_task_app() -> None:
     assert client.get(f"/celery/results/{r['task_id']}").json()["result"] == 5
 
 
+def test_finalize_imports_configured_task_modules(tmp_path, monkeypatch) -> None:
+    # A task module listed in conf.imports is not registered until something
+    # imports it (a worker does at startup; a web process does not). finalize
+    # (the default) runs that import so create_task_app exposes the task.
+    (tmp_path / "farm_capp.py").write_text(
+        "from celery import Celery\n"
+        "app = Celery('fin')\n"
+        "app.conf.update(task_always_eager=True, imports=['farm_ctasks'])\n"
+    )
+    (tmp_path / "farm_ctasks.py").write_text(
+        "from farm_capp import app\n"
+        "@app.task(name='fin.add')\n"
+        "def add(x: int, y: int) -> int:\n"
+        "    return x + y\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    for mod in ("farm_capp", "farm_ctasks"):
+        monkeypatch.delitem(__import__("sys").modules, mod, raising=False)
+
+    from farm_capp import app  # type: ignore[import-not-found]
+
+    # The task module hasn't been imported yet -> task absent from the snapshot.
+    assert "fin.add" not in app.tasks
+    # finalize=False keeps the raw snapshot: the task stays hidden.
+    without = create_task_app(app, finalize=False)
+    assert (
+        "/tasks/fin.add" not in TestClient(without).get("/openapi.json").json()["paths"]
+    )
+
+    # The default finalize=True imports conf.imports first, so it's now exposed.
+    with_final = create_task_app(app)
+    assert "fin.add" in app.tasks
+    assert (
+        "/tasks/fin.add" in TestClient(with_final).get("/openapi.json").json()["paths"]
+    )
+
+
 def test_mounted_app_dependencies() -> None:
     # dependencies= (e.g. auth) apply to every route in the mounted app.
     from fastapi import Depends, Header, HTTPException

@@ -195,6 +195,31 @@ To point Swagger assets at a different CDN (the FastAPI counterpart of
 `swagger_cdn`), FastAPI has no constructor option — override the `/docs` route with
 `fastapi.openapi.docs.get_swagger_ui_html(..., swagger_js_url=..., swagger_css_url=...)`.
 
+### Making sure every task is exposed (`finalize=`)
+
+Routes are built from a **one-time snapshot** of `celery_app.tasks`, so only tasks
+already registered at that moment are exposed. A Celery worker imports all task
+modules (from the `imports`/`include` config or `autodiscover_tasks`) at startup,
+but a web process does **not** — so tasks whose modules haven't been imported yet
+would be silently missing from the docs and routes.
+
+To avoid that, every entry point (`create_task_app`, `create_beat_app`,
+`build_openapi`, `get_urlpatterns`, `create_blueprint`) runs that same discovery by
+default (`finalize=True`) before building the app — so it "just works":
+
+```python
+app.mount("/celery", create_task_app(celery_app))  # imports task modules first
+app.mount("/beat", create_beat_app(celery_app))
+```
+
+Because this imports your task modules, an import error surfaces when the app is
+built (generally what you want — a task that can't be imported can't run in a worker
+either). Pass `finalize=False` to skip discovery and expose only what's already
+registered, e.g. when you import the task modules yourself or want to avoid the
+import side effects. The equivalent manual call is
+`celery_farm.finalize_app(celery_app)` (or Celery's
+`celery_app.loader.import_default_modules()`).
+
 ## Quickstart (Django)
 
 ```python
