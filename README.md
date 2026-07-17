@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="celery_farm" width="360">
+  <img src="https://raw.githubusercontent.com/milksys/celery-farm/main/docs/assets/logo.svg" alt="celery_farm" width="360">
 </p>
 
 <p align="center">
@@ -14,11 +14,11 @@
   <img src="https://img.shields.io/badge/python-3.11%E2%80%933.14-2ea44f" alt="Python 3.11–3.14">
   <img src="https://img.shields.io/badge/pydantic-v1%20%7C%20v2-2ea44f" alt="pydantic v1 | v2">
   <img src="https://img.shields.io/badge/integrations-FastAPI%20%C2%B7%20Django%20%C2%B7%20Flask-2ea44f" alt="Integrations: FastAPI, Django, Flask">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f" alt="License: MIT"></a>
+  <a href="https://github.com/milksys/celery-farm/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f" alt="License: MIT"></a>
 </p>
 
 <p align="center">
-  <img src="docs/assets/preview.svg" alt="Task Swagger and Beat Swagger preview" width="920">
+  <img src="https://raw.githubusercontent.com/milksys/celery-farm/main/docs/assets/preview.svg" alt="Task Swagger and Beat Swagger preview" width="920">
 </p>
 
 > The preview above is an illustration. To capture real screenshots, run an example
