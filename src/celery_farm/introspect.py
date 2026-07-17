@@ -9,6 +9,8 @@ import textwrap
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, get_type_hints
 
+from . import _compat
+
 if TYPE_CHECKING:
     from celery import Celery
     from celery.app.task import Task
@@ -205,7 +207,7 @@ def build_task_spec(name: str, task: Task) -> TaskSpec:
         if param.kind not in _KEYWORD_KINDS:
             continue
         required = param.default is inspect.Parameter.empty
-        annotation = hints.get(param.name, param.annotation)
+        annotation = _compat.adapt_type(hints.get(param.name, param.annotation))
         params.append(
             TaskParam(
                 name=param.name,
@@ -221,7 +223,9 @@ def build_task_spec(name: str, task: Task) -> TaskSpec:
         task=task,
         params=params,
         doc=doc,
-        return_annotation=hints.get("return", signature.return_annotation),
+        return_annotation=_compat.adapt_type(
+            hints.get("return", signature.return_annotation)
+        ),
         # Read optional overrides passed to the task decorator, e.g.
         # ``@app.task(summary="...", tags=[...])``. Celery stores unknown
         # decorator kwargs as task attributes.

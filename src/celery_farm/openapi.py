@@ -8,6 +8,7 @@ and for standalone use (just extract the spec for any Celery app).
 from __future__ import annotations
 
 import json
+import warnings
 from typing import TYPE_CHECKING, Any
 
 from . import _compat
@@ -160,8 +161,19 @@ def _add_task_operation(paths, spec, default_tags) -> dict[str, Any]:
     """Add the ``POST /tasks/{name}`` operation; return its collected ``$defs``."""
     # Request body schema (unwrapped single object arg, or wrapped model).
     sole = unwrap_param(spec)
-    body_type = sole.annotation if sole is not None else build_request_model(spec)
-    body_schema, body_defs = _compat.json_schema_of(body_type, _REF_TEMPLATE)
+    try:
+        body_type = sole.annotation if sole is not None else build_request_model(spec)
+        body_schema, body_defs = _compat.json_schema_of(body_type, _REF_TEMPLATE)
+    except Exception as exc:
+        # A type pydantic can't turn into a schema (e.g. a parametrised Generic
+        # TypedDict on Python < 3.12) must not sink the whole document — fall back
+        # to a permissive object body so the rest of the spec still builds.
+        warnings.warn(
+            f"celery_farm: could not build a request schema for task "
+            f"{spec.name!r} ({exc}); exposing a free-form object body instead.",
+            stacklevel=2,
+        )
+        body_schema, body_defs = {"type": "object"}, {}
 
     doc_summary, doc_description = split_doc(spec.doc)
     summary = spec.summary or doc_summary or f"Call task {spec.name}"

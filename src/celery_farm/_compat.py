@@ -10,12 +10,19 @@ under v1 a task annotated with a model receives a plain dict instead.
 
 from __future__ import annotations
 
+import sys
+import typing
 from typing import Any
 
 import pydantic
 from pydantic import ValidationError  # same import path in v1 and v2
 
 PYDANTIC_V2 = pydantic.VERSION.startswith("2")
+
+#: pydantic v2 refuses ``typing.TypedDict`` on Python < 3.12 (it needs the
+#: ``typing_extensions`` backport). When that combination is live we transparently
+#: rebuild any TypedDict a task exposes, so user code needn't change its imports.
+_NEEDS_TYPEDDICT_REWRITE = PYDANTIC_V2 and sys.version_info < (3, 12)
 
 #: OpenAPI dialect that matches the JSON Schema each pydantic version emits.
 OPENAPI_VERSION = "3.1.0" if PYDANTIC_V2 else "3.0.3"
@@ -24,6 +31,7 @@ __all__ = [
     "PYDANTIC_V2",
     "OPENAPI_VERSION",
     "ValidationError",
+    "adapt_type",
     "dump",
     "validate_model",
     "validate_as",
@@ -31,6 +39,54 @@ __all__ = [
     "json_schema_of",
     "models_schema",
 ]
+
+
+def adapt_type(tp: Any) -> Any:
+    """Make ``tp`` safe to hand to pydantic on the current interpreter.
+
+    A no-op everywhere except Python < 3.12 with pydantic v2, where a stdlib
+    ``typing.TypedDict`` is rebuilt (recursively, including nested/inherited ones)
+    as a ``typing_extensions.TypedDict`` — the form pydantic v2 requires there.
+    Per-field required/optional keys are preserved. Anything that fails to convert
+    (e.g. a parametrised ``Generic`` TypedDict) is returned unchanged; callers that
+    feed the result to pydantic degrade gracefully from there.
+    """
+    if not _NEEDS_TYPEDDICT_REWRITE:
+        return tp
+    try:
+        return _rewrite_typeddicts(tp)
+    except Exception:
+        return tp
+
+
+_typeddict_cache: dict[Any, Any] = {}
+
+
+def _rewrite_typeddicts(tp: Any) -> Any:
+    import typing_extensions as te
+
+    if te.is_typeddict(tp):
+        cached = _typeddict_cache.get(tp)
+        if cached is not None:
+            return cached
+        hints = te.get_type_hints(tp, include_extras=True)
+        required = getattr(tp, "__required_keys__", frozenset())
+        fields = {
+            key: value if key in required else te.NotRequired[value]
+            for key, raw in hints.items()
+            for value in (_rewrite_typeddicts(raw),)
+        }
+        rebuilt = te.TypedDict(tp.__name__, fields)  # type: ignore[operator]
+        _typeddict_cache[tp] = rebuilt
+        return rebuilt
+    origin = typing.get_origin(tp)
+    if origin is not None:
+        args = tuple(_rewrite_typeddicts(a) for a in typing.get_args(tp))
+        try:
+            return origin[args[0] if len(args) == 1 else args]
+        except TypeError:
+            return tp
+    return tp
 
 
 def dump(instance: Any) -> Any:

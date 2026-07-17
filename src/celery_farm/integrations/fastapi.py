@@ -6,6 +6,7 @@ Because each task route carries a real pydantic request model, FastAPI's native
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, TypedDict, Unpack
 
 from .. import _compat
@@ -97,13 +98,10 @@ def _build_task_router(
         return endpoint
 
     for spec in specs:
+        # ``unwrap_param`` is pydantic-free; the body type (esp. a wrapped
+        # ``build_request_model``) is what can raise, so resolve it lazily below.
         sole = unwrap_param(spec)
-        if sole is not None:
-            body_type: Any = sole.annotation
-            kwarg_name: str | None = sole.name
-        else:
-            body_type = build_request_model(spec)
-            kwarg_name = None
+        kwarg_name: str | None = sole.name if sole is not None else None
         doc_summary, doc_description = split_doc(spec.doc)
         # Explicit @app.task(summary=..., description=...) overrides the docstring.
         summary = spec.summary or doc_summary
@@ -118,9 +116,8 @@ def _build_task_router(
             route_kwargs["openapi_extra"] = spec.openapi_extra
         if spec.deprecated is not None:
             route_kwargs["deprecated"] = spec.deprecated
-        router.add_api_route(
-            f"/tasks/{spec.name}",
-            make_endpoint(spec.task, body_type, kwarg_name),
+        route_args = dict(
+            path=f"/tasks/{spec.name}",
             methods=["POST"],
             response_model=TaskDispatchResponse,
             name=f"call_{spec.name}",
@@ -130,6 +127,27 @@ def _build_task_router(
             description=description,
             **route_kwargs,
         )
+        try:
+            if sole is not None:
+                body_type: Any = sole.annotation
+            else:
+                body_type = build_request_model(spec)
+            router.add_api_route(
+                endpoint=make_endpoint(spec.task, body_type, kwarg_name), **route_args
+            )
+        except Exception as exc:
+            # A body type FastAPI/pydantic can't schema (e.g. a parametrised Generic
+            # TypedDict on Python < 3.12) shouldn't drop the route — re-register it
+            # with a free-form ``dict`` body so the task stays callable. Dispatch is
+            # unaffected: ``kwarg_name`` still routes the payload correctly.
+            warnings.warn(
+                f"celery_farm: could not build a request schema for task "
+                f"{spec.name!r} ({exc}); exposing a free-form object body instead.",
+                stacklevel=2,
+            )
+            router.add_api_route(
+                endpoint=make_endpoint(spec.task, dict, kwarg_name), **route_args
+            )
 
     @router.get(
         "/tasks", response_model=list[TaskInfo], name="list_tasks", tags=default_tags
